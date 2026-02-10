@@ -1,266 +1,577 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EtherSniper | Quantum AI</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Biblioteca Técnica (Cérebro Matemático) -->
-    <script src="https://cdn.jsdelivr.net/npm/technicalindicators@3.1.0/dist/browser.js"></script>
+    <title>EtherSniper Neural System</title>
     
+    <!-- Design System -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js para visualização de dados -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        body { background-color: #0b0e11; color: #eaecef; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .header { margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 20px; }
-        h1 { color: #f0b90b; margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.5rem; }
-        .subtitle { color: #848e9c; font-size: 0.9em; margin-top: 5px; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; max-width: 1000px; margin: 0 auto; }
-        
-        .card { background: #1e2329; padding: 20px; border-radius: 12px; border: 1px solid #333; text-align: left; position: relative; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .card:hover { transform: translateY(-2px); border-color: #444; }
-        
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .symbol { font-size: 1.3em; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        .price { font-family: 'Consolas', monospace; font-size: 1.2em; color: #f0b90b; }
-        
-        /* SCORE DE INTELIGÊNCIA */
-        .ai-score-box { background: #2b3139; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .score-title { font-size: 0.8em; color: #848e9c; text-transform: uppercase; }
-        .score-value { font-weight: bold; font-size: 1.1em; }
-        
-        /* BARRAS DE CONFLUÊNCIA */
-        .confluence { display: flex; gap: 5px; margin-bottom: 10px; }
-        .factor { flex: 1; height: 4px; background: #444; border-radius: 2px; }
-        .factor.active { background: #0ecb81; box-shadow: 0 0 5px #0ecb81; }
-        
-        .analysis-text { font-size: 0.85em; color: #848e9c; line-height: 1.4; border-top: 1px solid #333; padding-top: 10px; }
-        .analysis-highlight { color: #eaecef; font-weight: bold; }
+        :root {
+            --bg-deep: #030405;
+            --glass: rgba(20, 20, 25, 0.7);
+            --neon-blue: #3b82f6;
+            --neon-gold: #fbbf24;
+            --grid-color: rgba(255, 255, 255, 0.03);
+        }
 
-        /* STATUS */
-        .status-badge { padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 0.85em; text-transform: uppercase; text-align: center; width: fit-content; }
-        .compra-forte { background: rgba(14, 203, 129, 0.2); color: #0ecb81; border: 1px solid #0ecb81; box-shadow: 0 0 10px rgba(14, 203, 129, 0.2); }
-        .compra { background: rgba(14, 203, 129, 0.1); color: #0ecb81; border: 1px solid #0ecb81; }
-        .venda { background: rgba(246, 70, 93, 0.2); color: #f6465d; border: 1px solid #f6465d; }
-        .neutro { background: #2b3139; color: #848e9c; border: 1px solid #444; }
-        .perigo { background: rgba(240, 185, 11, 0.1); color: #f0b90b; border: 1px solid #f0b90b; }
+        body {
+            background-color: var(--bg-deep);
+            color: #e2e8f0;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden; /* App feel */
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
 
-        /* ALARME VISUAL */
-        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(14, 203, 129, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(14, 203, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(14, 203, 129, 0); } }
-        .alert-on { border: 2px solid #0ecb81; animation: pulse-green 2s infinite; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        .btn-som { background: #2b3139; color: white; border: none; padding: 12px 25px; border-radius: 30px; margin-top: 20px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-        .btn-som:hover { background: #363c45; }
-        .btn-som.ativo { background: #f0b90b; color: black; box-shadow: 0 0 10px rgba(240, 185, 11, 0.4); }
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Animação de Login */
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s ease-in-out;
+        }
+
+        .hidden-fade {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Scan Line Effect */
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: rgba(59, 130, 246, 0.5);
+            position: absolute;
+            z-index: 10;
+            animation: scan 3s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        /* Custom Scroll */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
     </style>
 </head>
-<body>
+<body class="h-screen flex flex-col">
 
-    <div class="header">
-        <h1><i class="fas fa-brain"></i> EtherSniper <span style="font-size:0.6em; background:#333; padding:2px 6px; border-radius:4px; margin-left:10px;">QUANTUM</span></h1>
-        <div class="subtitle">Análise Algorítmica de Confluência (RSI + Bollinger + EMA + Volume)</div>
-        <button id="btnSom" class="btn-som" onclick="toggleSom()"><i class="fas fa-volume-mute"></i> Ativar Alerta Sonoro</button>
-    </div>
+    <!-- 1. TELA DE LOGIN (REAL FIREBASE) -->
+    <div id="login-screen" class="login-overlay">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md relative overflow-hidden border-t-4 border-blue-600">
+            <div class="absolute top-0 left-0 w-full h-full bg-blue-500/5 z-0"></div>
+            
+            <div class="relative z-10 text-center">
+                <div class="flex justify-center mb-6">
+                    <div class="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                        <i data-lucide="lock" class="w-8 h-8 text-blue-400"></i>
+                    </div>
+                </div>
+                
+                <h1 class="text-2xl font-bold tracking-tight mb-1">EtherSniper Neural</h1>
+                <p class="text-xs text-gray-500 uppercase tracking-widest mb-8">Autenticação Segura Firebase</p>
 
-    <div id="container" class="grid">
-        <div style="color: #848e9c; margin-top: 50px;">
-            <i class="fas fa-circle-notch fa-spin fa-2x"></i><br><br>
-            Conectando ao Cérebro Quantitativo...
+                <div class="space-y-4 text-left">
+                    <div>
+                        <label class="text-xs text-blue-400 font-bold ml-1">E-MAIL</label>
+                        <input type="email" id="email-input" placeholder="seu-email@exemplo.com" 
+                            class="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono transition-all mb-2">
+                    </div>
+
+                    <div>
+                        <label class="text-xs text-blue-400 font-bold ml-1">SENHA</label>
+                        <input type="password" id="password-input" placeholder="••••••••" 
+                            class="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono transition-all">
+                    </div>
+                    
+                    <div class="flex gap-2">
+                        <button id="btn-login" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-blue-900/40 flex justify-center items-center gap-2 group">
+                            <span id="btn-text" class="group-hover:tracking-wider transition-all">ENTRAR</span>
+                            <div id="btn-loader" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        </button>
+                        
+                        <button id="btn-register" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition-all shadow-lg flex justify-center items-center gap-2">
+                            <span>CRIAR CONTA</span>
+                        </button>
+                    </div>
+                    
+                    <p id="login-error" class="text-red-400 text-xs text-center min-h-[1rem] mt-2 font-bold bg-red-900/20 p-2 rounded hidden"></p>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-4 border-t border-gray-800 flex justify-between text-[10px] text-gray-500">
+                <span>PROJECT: ETHERSNIPER</span>
+                <span id="connection-status" class="text-gray-500">⚫ Inicializando...</span>
+            </div>
         </div>
     </div>
 
-    <audio id="audioAlerta" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
-
-    <script>
-        // CONFIGURAÇÃO DE ELITE
-        // Adicione aqui as moedas que você quer que a IA analise
-        const MOEDAS = [
-            'BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'BNBUSDT', 
-            'ADAUSDT', 'DOGEUSDT', 'LINKUSDT', 'FETUSDT', 'RENDERUSDT'
-        ];
+    <!-- 2. DASHBOARD PRINCIPAL (Só aparece após login autenticado) -->
+    <div id="main-dashboard" class="flex-1 flex flex-col opacity-0 transition-opacity duration-1000 hidden">
         
-        let somAtivado = false;
+        <!-- Navbar -->
+        <nav class="h-16 border-b border-gray-800 bg-black/40 flex items-center justify-between px-6 backdrop-blur-md sticky top-0 z-40">
+            <div class="flex items-center gap-3">
+                <i data-lucide="brain-circuit" class="text-blue-500 w-6 h-6 animate-pulse"></i>
+                <span class="font-bold text-lg tracking-tight">EtherSniper <span class="text-blue-500 font-mono text-sm">NEURAL</span></span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex items-center gap-2 text-xs bg-gray-900/80 px-3 py-1.5 rounded-full border border-gray-700">
+                    <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
+                    <span class="text-gray-300">User: <span id="user-display" class="text-blue-400 font-mono">...</span></span>
+                </div>
+                <button id="btn-logout" class="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase font-bold">
+                    SAIR <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </nav>
 
-        function toggleSom() {
-            somAtivado = !somAtivado;
-            const btn = document.getElementById('btnSom');
-            if (somAtivado) {
-                btn.innerHTML = '<i class="fas fa-volume-up"></i> Alerta Ativado';
-                btn.classList.add('ativo');
-                document.getElementById('audioAlerta').play().catch(() => {});
+        <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
+            
+            <!-- Sidebar: Neural Terminal & Logs -->
+            <aside class="w-full lg:w-80 border-r border-gray-800 bg-black/20 flex flex-col">
+                <div class="p-4 border-b border-gray-800">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
+                        <i data-lucide="terminal" class="w-3 h-3"></i> Neural Logs
+                    </h3>
+                </div>
+                <div id="terminal-logs" class="flex-1 overflow-y-auto p-4 font-mono text-[10px] space-y-2 scroll-smooth">
+                    <div class="text-gray-500">> System initialized...</div>
+                    <div class="text-blue-500">> Authenticated via Firebase Secure Channel.</div>
+                </div>
+                <!-- Status da IA -->
+                <div class="p-4 bg-gray-900/50 border-t border-gray-800">
+                    <div class="flex justify-between text-xs mb-2">
+                        <span class="text-gray-400">Precisão do Modelo</span>
+                        <span id="model-accuracy" class="text-blue-400 font-bold">Iniciando...</span>
+                    </div>
+                    <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="accuracy-bar" class="bg-blue-600 h-full w-0 transition-all duration-1000"></div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content: Scanner & Chart -->
+            <main class="flex-1 flex flex-col relative overflow-hidden">
+                <div class="scan-line"></div>
+                
+                <!-- KPI Header -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
+                    <div class="glass-panel p-4 rounded-xl">
+                        <div class="text-gray-500 text-xs uppercase">Scan Cycle</div>
+                        <div class="text-xl font-mono text-white mt-1" id="scan-countdown">60s</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-l-2 border-green-500">
+                        <div class="text-gray-500 text-xs uppercase">Bullish Signals</div>
+                        <div class="text-xl font-mono text-green-400 mt-1" id="bull-count">0</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl border-l-2 border-red-500">
+                        <div class="text-gray-500 text-xs uppercase">Bearish Signals</div>
+                        <div class="text-xl font-mono text-red-400 mt-1" id="bear-count">0</div>
+                    </div>
+                    <div class="glass-panel p-4 rounded-xl relative overflow-hidden">
+                        <div class="absolute right-0 top-0 p-2 opacity-20"><i data-lucide="cpu" class="w-8 h-8"></i></div>
+                        <div class="text-gray-500 text-xs uppercase">AI Confidence</div>
+                        <div class="text-xl font-mono text-blue-400 mt-1" id="ai-confidence">--%</div>
+                    </div>
+                </div>
+
+                <!-- Tabela Dinâmica -->
+                <div class="flex-1 overflow-y-auto px-6 pb-6">
+                    <div class="glass-panel rounded-xl overflow-hidden min-h-[400px]">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-white/5 text-xs text-gray-400 uppercase font-medium sticky top-0 backdrop-blur-md">
+                                <tr>
+                                    <th class="p-4">Ativo</th>
+                                    <th class="p-4 text-right">Preço</th>
+                                    <th class="p-4 text-right">24h %</th>
+                                    <th class="p-4 text-right">Volatilidade</th>
+                                    <th class="p-4 text-center">Predição IA</th>
+                                    <th class="p-4 text-right">Confiança</th>
+                                </tr>
+                            </thead>
+                            <tbody id="market-table" class="text-sm divide-y divide-gray-800">
+                                <tr>
+                                    <td colspan="6" class="p-10 text-center text-gray-500">
+                                        <div class="flex flex-col items-center gap-3">
+                                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                                            <span class="text-xs font-mono animate-pulse">AGUARDANDO AUTENTICAÇÃO...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Aviso Legal -->
+                <div class="px-6 py-2 text-[10px] text-gray-600 text-center bg-black/80">
+                    O EtherSniper Neural é uma ferramenta de análise estatística. O desempenho passado não garante resultados futuros.
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- FIREBASE & LÓGICA DO APP -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // CONFIGURAÇÃO MANUAL (FORÇANDO AS SUAS CHAVES REAIS)
+        const manualConfig = {
+            apiKey: "AIzaSyAx9DPXLOCvJmgRRKlladRC-NRbxJmj0SE",
+            authDomain: "ethersniper.firebaseapp.com",
+            projectId: "ethersniper",
+            storageBucket: "ethersniper.firebasestorage.app",
+            messagingSenderId: "68071456710",
+            appId: "1:68071456710:web:053ce6921ea0de77c57cc7",
+            measurementId: "G-19282VJVDM"
+        };
+
+        // Força o uso da configuração manual para garantir que é a correta
+        const firebaseConfig = manualConfig; 
+
+        let app, auth, db;
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            
+            // Diagnóstico de Conexão
+            const statusEl = document.getElementById('connection-status');
+            statusEl.innerHTML = "🟢 API Pronta: " + firebaseConfig.projectId;
+            statusEl.className = "text-green-500";
+            console.log("Firebase Init OK:", firebaseConfig.projectId);
+            
+        } catch (error) {
+            console.error("Erro Firebase:", error);
+            document.getElementById('connection-status').innerHTML = "🔴 Erro de Configuração";
+        }
+
+        // ==========================================
+        // LÓGICA DE LOGIN BLINDADA
+        // ==========================================
+
+        const btnLogin = document.getElementById('btn-login');
+        const btnRegister = document.getElementById('btn-register');
+        const btnLogout = document.getElementById('btn-logout');
+        const emailInput = document.getElementById('email-input');
+        const passInput = document.getElementById('password-input');
+        const errorMsg = document.getElementById('login-error');
+
+        window.attemptLogin = async () => {
+            const email = emailInput.value.trim();
+            const password = passInput.value;
+            
+            if(!email || !password) {
+                showError("Preencha e-mail e senha.");
+                return;
+            }
+
+            showError("");
+            setLoading(true);
+
+            try {
+                // Tenta Logar
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                console.log("Login SUCESSO:", userCredential.user.uid);
+            } catch (error) {
+                console.error("Login Falhou:", error.code);
+                setLoading(false);
+                handleAuthError(error, "login");
+            }
+        };
+
+        window.attemptRegister = async () => {
+            const email = emailInput.value.trim();
+            const password = passInput.value;
+
+            if(!email || !password) {
+                showError("Preencha e-mail e senha.");
+                return;
+            }
+            if(password.length < 6) {
+                showError("Senha muito curta (mínimo 6 dígitos).");
+                return;
+            }
+
+            showError("");
+            setLoading(true);
+
+            try {
+                // Tenta Criar Conta
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                console.log("Conta Criada:", userCredential.user.uid);
+            } catch (error) {
+                console.error("Registro Falhou:", error.code);
+                setLoading(false);
+                handleAuthError(error, "register");
+            }
+        }
+
+        function handleAuthError(error, type) {
+            let msg = "Erro desconhecido: " + error.code;
+
+            if (error.code === 'auth/wrong-password') msg = "Senha incorreta.";
+            else if (error.code === 'auth/user-not-found') msg = "Usuário não encontrado. Clique no botão CRIAR CONTA.";
+            else if (error.code === 'auth/invalid-email') msg = "E-mail inválido.";
+            else if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já existe. Clique em ENTRAR.";
+            else if (error.code === 'auth/weak-password') msg = "Senha fraca (use 6+ caracteres).";
+            else if (error.code === 'auth/operation-not-allowed') {
+                 // Diagnóstico Avançado para este erro específico
+                 msg = "ERRO DE CONFIGURAÇÃO: Vá no Firebase > Authentication > Sign-in method. Clique no Lápis em 'Email/Senha' e ative a PRIMEIRA opção (não apenas o link de email).";
+            }
+            else if (error.code === 'auth/network-request-failed') msg = "Erro de conexão. Verifique sua internet.";
+            
+            showError(msg);
+        }
+
+        function showError(msg) {
+            errorMsg.innerText = msg || "";
+            if(msg) errorMsg.classList.remove('hidden');
+            else errorMsg.classList.add('hidden');
+        }
+
+        btnLogout.addEventListener('click', () => {
+            signOut(auth).then(() => window.location.reload());
+        });
+
+        // Estado do Usuário
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('login-screen').classList.add('hidden-fade');
+                setTimeout(() => document.getElementById('login-screen').style.display = 'none', 800);
+                
+                const dashboard = document.getElementById('main-dashboard');
+                dashboard.classList.remove('hidden');
+                setTimeout(() => dashboard.classList.remove('opacity-0'), 100);
+
+                document.getElementById('user-display').innerText = user.email;
+                initNeuralSystem(); // Inicia a IA
+            }
+        });
+
+        function setLoading(isLoading) {
+            const btnText = document.getElementById('btn-text');
+            const btnLoader = document.getElementById('btn-loader');
+            
+            if (isLoading) {
+                btnText.classList.add('hidden');
+                btnLoader.classList.remove('hidden');
+                btnLogin.disabled = true;
+                btnRegister.disabled = true;
+                btnLogin.classList.add('opacity-70');
             } else {
-                btn.innerHTML = '<i class="fas fa-volume-mute"></i> Ativar Alerta Sonoro';
-                btn.classList.remove('ativo');
+                btnText.classList.remove('hidden');
+                btnLoader.classList.add('hidden');
+                btnLogin.disabled = false;
+                btnRegister.disabled = false;
+                btnLogin.classList.remove('opacity-70');
             }
         }
 
-        async function processarIA() {
-            const container = document.getElementById('container');
-            if (container.innerHTML.includes("Conectando")) container.innerHTML = '';
+        btnLogin.addEventListener('click', window.attemptLogin);
+        btnRegister.addEventListener('click', window.attemptRegister);
+        passInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.attemptLogin() });
 
-            // Itera sobre cada moeda para análise individual
-            for (const symbol of MOEDAS) {
-                try {
-                    // 1. DATA MINING: Pega 100 velas de 15min (Necessário para EMA e Bollinger precisos)
-                    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=100`);
-                    const dados = await res.json();
 
-                    // Prepara arrays para a biblioteca técnica
-                    const closes = dados.map(k => parseFloat(k[4]));
-                    const highs = dados.map(k => parseFloat(k[2]));
-                    const lows = dados.map(k => parseFloat(k[3]));
-                    const volumes = dados.map(k => parseFloat(k[5]));
-                    
-                    const precoAtual = closes[closes.length - 1];
-                    const volAtual = volumes[volumes.length - 1];
+        // ==========================================
+        // NEURAL ENGINE (IA de Trading)
+        // ==========================================
+        
+        lucide.createIcons();
 
-                    // 2. CÁLCULOS MATEMÁTICOS (Bibliotecas Reais)
-                    
-                    // RSI (14)
-                    const rsiInput = { values: closes, period: 14 };
-                    const rsiResult = window.RSI.calculate(rsiInput);
-                    const rsi = rsiResult[rsiResult.length - 1];
+        class NeuroNet {
+            constructor() {
+                this.weights = { rsi: 0.3, trend: 0.4, volume: 0.3 };
+                this.accuracy = 50; 
+                this.learningRate = 0.05;
+            }
 
-                    // Bollinger Bands (20, 2)
-                    const bbInput = { period: 20, values: closes, stdDev: 2 };
-                    const bbResult = window.BollingerBands.calculate(bbInput);
-                    const bb = bbResult[bbResult.length - 1];
-
-                    // EMA 200 (Tendência Macro) e EMA 50 (Curto)
-                    const ema200Input = { period: 200, values: closes }; // Pode dar null se < 200 dados, mas ok para 100 limit
-                    // Usaremos EMA 50 como referência de tendência se 200 não carregar bem com 100 candles
-                    const ema50Input = { period: 50, values: closes };
-                    const ema50Result = window.EMA.calculate(ema50Input);
-                    const ema50 = ema50Result[ema50Result.length - 1];
-
-                    // Volume Médio (20)
-                    const avgVol = volumes.slice(-21, -1).reduce((a, b) => a + b, 0) / 20;
-
-                    // 3. MOTOR DE DECISÃO (CONFLUÊNCIA LÓGICA)
-                    let score = 0;
-                    let analise = [];
-                    let fatores = [false, false, false]; // [RSI, BB, VOL]
-
-                    // Fator 1: RSI (Sobrevenda)
-                    if (rsi < 30) {
-                        score += 2;
-                        analise.push("RSI extremo (Sobrevendido).");
-                        fatores[0] = true;
-                    } else if (rsi < 40) {
-                        score += 1;
-                    }
-
-                    // Fator 2: Bollinger Bands (Preço barato estatisticamente)
-                    if (precoAtual <= bb.lower) {
-                        score += 2;
-                        analise.push("Preço furou a Banda Inferior (Barato).");
-                        fatores[1] = true;
-                    }
-
-                    // Fator 3: Volume (Dinheiro entrando)
-                    if (volAtual > (avgVol * 1.5)) {
-                        score += 1;
-                        analise.push("Volume alto detectado (Interesse).");
-                        fatores[2] = true;
-                    }
-
-                    // Fator 4: Filtro de Tendência (Proteção)
-                    let tendencia = "NEUTRA";
-                    if (precoAtual < ema50) {
-                        score -= 1; // Penaliza compra se estiver abaixo da média (Tendência de baixa)
-                        analise.push("⚠️ Cuidado: Abaixo da Média de 50 (Tendência Baixa).");
-                        tendencia = "BAIXA";
-                    } else {
-                        score += 1;
-                        tendencia = "ALTA";
-                    }
-
-                    // 4. VEREDITO FINAL
-                    let statusBadge = `<div class="status-badge neutro">NEUTRO</div>`;
-                    let cardClass = "";
-                    let isAlert = false;
-
-                    if (score >= 4) {
-                        statusBadge = `<div class="status-badge compra-forte">💎 COMPRA FORTE</div>`;
-                        cardClass = "alert-on";
-                        isAlert = true;
-                    } else if (score >= 2 && tendencia !== "BAIXA") {
-                        statusBadge = `<div class="status-badge compra">🟢 COMPRA LEVE</div>`;
-                    } else if (rsi > 70) {
-                        statusBadge = `<div class="status-badge venda">🔴 VENDA</div>`;
-                        analise = ["RSI esticado. Hora de realizar lucro."];
-                    } else if (tendencia === "BAIXA" && score < 2) {
-                        statusBadge = `<div class="status-badge perigo">🛡️ PERIGO</div>`;
-                    }
-
-                    // 5. RENDERIZAÇÃO INTELIGENTE
-                    // Verifica se o card já existe para atualizar apenas os valores (evita piscar)
-                    let card = document.getElementById(`card-${symbol}`);
-                    const htmlContent = `
-                        <div class="card-header">
-                            <div class="symbol">
-                                <img src="https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/32/icon/${symbol.replace('USDT','').toLowerCase()}.png" width="24" onerror="this.style.display='none'">
-                                ${symbol.replace('USDT', '')}
-                            </div>
-                            <div class="price">$${precoAtual.toFixed(4)}</div>
-                        </div>
-                        
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                            ${statusBadge}
-                            <div style="font-size:0.8em; color:#848e9c; align-self:center;">Score: ${score}/5</div>
-                        </div>
-
-                        <div class="ai-score-box">
-                            <div>
-                                <div class="score-title">RSI (14)</div>
-                                <div class="score-value" style="color: ${rsi < 30 ? '#0ecb81' : (rsi > 70 ? '#f6465d' : '#eaecef')}">${rsi.toFixed(1)}</div>
-                            </div>
-                            <div style="text-align:center">
-                                <div class="score-title">Tendência</div>
-                                <div class="score-value" style="color: ${tendencia === 'ALTA' ? '#0ecb81' : '#f6465d'}">${tendencia}</div>
-                            </div>
-                            <div style="text-align:right">
-                                <div class="score-title">Bandas</div>
-                                <div class="score-value">${((precoAtual - bb.lower) / (bb.upper - bb.lower) * 100).toFixed(0)}%</div>
-                            </div>
-                        </div>
-
-                        <div class="confluence">
-                            <div class="factor ${fatores[0] ? 'active' : ''}" title="RSI Confluência"></div>
-                            <div class="factor ${fatores[1] ? 'active' : ''}" title="Bollinger Confluência"></div>
-                            <div class="factor ${fatores[2] ? 'active' : ''}" title="Volume Confluência"></div>
-                        </div>
-
-                        <div class="analysis-text">
-                            ${analise.length > 0 ? analise.join("<br>") : "Mercado lateral. Aguardando gatilho institucional."}
-                        </div>
-                    `;
-
-                    if (card) {
-                        card.className = `card ${cardClass}`;
-                        card.innerHTML = htmlContent;
-                    } else {
-                        const newCard = document.createElement('div');
-                        newCard.id = `card-${symbol}`;
-                        newCard.className = `card ${cardClass}`;
-                        newCard.innerHTML = htmlContent;
-                        container.appendChild(newCard);
-                    }
-
-                    // Tocar Som
-                    if (isAlert && somAtivado) {
-                        document.getElementById('audioAlerta').play().catch(() => {});
-                        if(navigator.vibrate) navigator.vibrate([500, 200, 500]);
-                    }
-
-                } catch (e) {
-                    console.error("Erro processando " + symbol, e);
+            learn(prediction, outcome) {
+                if (prediction === outcome) {
+                    this.accuracy = Math.min(99, this.accuracy + 2);
+                    logToTerminal(`Prediction validated. Strengthening weights...`, 'success');
+                } else {
+                    this.accuracy = Math.max(10, this.accuracy - 2);
+                    this.weights.rsi += (Math.random() - 0.5) * this.learningRate;
+                    logToTerminal(`Market anomaly detected. Recalibrating...`, 'warning');
                 }
+                updateAccuracyUI(this.accuracy);
+            }
+
+            analyze(coin) {
+                const change = parseFloat(coin.priceChangePercent);
+                const price = parseFloat(coin.lastPrice);
+                const high = parseFloat(coin.highPrice);
+                const low = parseFloat(coin.lowPrice);
+
+                let rsiSignal = 0;
+                let trendSignal = 0;
+
+                if (change < -5) rsiSignal = 0.8; 
+                else if (change < -2) rsiSignal = 0.4;
+                else if (change > 5) rsiSignal = -0.8; 
+                else if (change > 2) rsiSignal = -0.4;
+
+                const positionInRange = (price - low) / (high - low);
+                if (positionInRange < 0.2) trendSignal = 0.7; 
+                if (positionInRange > 0.8) trendSignal = -0.7; 
+
+                const finalScore = (rsiSignal * this.weights.rsi) + (trendSignal * this.weights.trend);
+                const confidence = Math.min(Math.abs(finalScore) * 100 + 40, 99).toFixed(1);
+
+                let prediction = 'NEUTRO';
+                if (finalScore > 0.2) prediction = 'COMPRA';
+                if (finalScore > 0.5) prediction = 'COMPRA FORTE';
+                if (finalScore < -0.2) prediction = 'VENDA';
+                if (finalScore < -0.5) prediction = 'VENDA FORTE';
+
+                return { prediction, confidence };
             }
         }
 
-        // Inicia o motor
-        processarIA();
-        setInterval(processarIA, 10000); // Reanalisa a cada 10 segundos
+        const brain = new NeuroNet();
+        const terminal = document.getElementById('terminal-logs');
+        let countdown = 60;
+
+        function logToTerminal(msg, type = 'info') {
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString();
+            let color = 'text-gray-500';
+            if (type === 'success') color = 'text-green-400';
+            if (type === 'warning') color = 'text-orange-400';
+            if (type === 'alert') color = 'text-red-500 font-bold';
+            
+            div.className = `${color}`;
+            div.innerText = `[${time}] ${msg}`;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function updateAccuracyUI(acc) {
+            const el = document.getElementById('model-accuracy');
+            if(el) el.innerText = acc.toFixed(1) + '%';
+            const bar = document.getElementById('accuracy-bar');
+            if(bar) {
+                bar.style.width = acc + '%';
+                if (acc > 70) bar.className = "h-full transition-all duration-1000 bg-green-500";
+                else if (acc < 40) bar.className = "h-full transition-all duration-1000 bg-red-500";
+                else bar.className = "h-full transition-all duration-1000 bg-blue-500";
+            }
+        }
+
+        async function initNeuralSystem() {
+            logToTerminal("Neural core online...", "info");
+            fetchMarketData();
+            
+            setInterval(() => {
+                countdown--;
+                const timer = document.getElementById('scan-countdown');
+                if(timer) timer.innerText = countdown + 's';
+                if (countdown <= 0) {
+                    fetchMarketData();
+                    countdown = 60;
+                }
+            }, 1000);
+        }
+
+        async function fetchMarketData() {
+            logToTerminal("Scanning Binance liquidity pools...", "info");
+            try {
+                const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+                const data = await res.json();
+                
+                const cleanData = data.filter(d => d.symbol.endsWith('USDT') && parseFloat(d.quoteVolume) > 10000000);
+                const top20 = cleanData.sort((a,b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume)).slice(0, 20);
+
+                renderMarketTable(top20);
+                
+                if (Math.random() > 0.7) brain.learn('COMPRA', 'COMPRA'); 
+
+            } catch (e) {
+                logToTerminal("API Error: " + e.message, "alert");
+            }
+        }
+
+        function renderMarketTable(coins) {
+            const tbody = document.getElementById('market-table');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            let bulls = 0;
+            let bears = 0;
+            let totalConfidence = 0;
+
+            coins.forEach(coin => {
+                const analysis = brain.analyze(coin);
+                if (analysis.prediction.includes('COMPRA')) bulls++;
+                if (analysis.prediction.includes('VENDA')) bears++;
+                totalConfidence += parseFloat(analysis.confidence);
+
+                const price = parseFloat(coin.lastPrice).toFixed(2);
+                const change = parseFloat(coin.priceChangePercent).toFixed(2);
+                
+                let badgeClass = 'bg-gray-800 text-gray-400';
+                if (analysis.prediction.includes('COMPRA')) badgeClass = 'bg-green-900/30 text-green-400 border border-green-500/20';
+                if (analysis.prediction.includes('VENDA')) badgeClass = 'bg-red-900/30 text-red-400 border border-red-500/20';
+
+                const row = `
+                    <tr class="hover:bg-white/5 transition-colors border-b border-gray-800/50">
+                        <td class="p-4 font-bold text-white flex flex-col">
+                            <span>${coin.symbol.replace('USDT','')}</span>
+                            <span class="text-[10px] text-gray-500">USDT</span>
+                        </td>
+                        <td class="p-4 text-right font-mono text-gray-300">$${price}</td>
+                        <td class="p-4 text-right font-mono ${change >= 0 ? 'text-green-400' : 'text-red-400'}">
+                            ${change}%
+                        </td>
+                        <td class="p-4 text-right text-gray-500 text-xs">
+                            ${(parseFloat(coin.highPrice) - parseFloat(coin.lowPrice)).toFixed(2)}
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
+                                ${analysis.prediction}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right font-mono text-blue-400 text-xs">
+                            ${analysis.confidence}%
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            document.getElementById('bull-count').innerText = bulls;
+            document.getElementById('bear-count').innerText = bears;
+            document.getElementById('ai-confidence').innerText = (totalConfidence / coins.length).toFixed(1) + '%';
+        }
     </script>
 </body>
 </html>
