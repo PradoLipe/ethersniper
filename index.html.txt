@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EtherSniper - Painel de Controle</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: #1e2329; padding: 30px; border-radius: 15px; text-align: center; border: 1px solid #f0b90b; width: 350px; }
+        h1 { color: #f0b90b; }
+        .banca-box { background: #2b3139; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .valor { font-size: 2.2em; font-weight: bold; color: #00ff88; }
+        .info { color: #848e9c; font-size: 0.9em; }
+        .status { margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🏹 EtherSniper</h1>
+        <p class="info">Simulação: 15 Dias | Banca Inicial: R$ 1.500,00</p>
+        
+        <div class="banca-box">
+            <div class="info">Banca Atual Simulada</div>
+            <div class="valor" id="banca">R$ 1.500,00</div>
+        </div>
+
+        <div class="info">Progresso: <span id="dia">1</span> / 15 dias</div>
+        <div id="status" class="status">Iniciando algoritmo...</div>
+    </div>
+
+    <script>
+        // Suas configurações reais do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAx9DPXLOCvJmgRRKlladRC-NRbxJmj0SE",
+            authDomain: "ethersniper.firebaseapp.com",
+            projectId: "ethersniper",
+            storageBucket: "ethersniper.firebasestorage.app",
+            messagingSenderId: "68071456710",
+            appId: "1:68071456710:web:053ce6921ea0de77c57cc7",
+            measurementId: "G-19282VJVDM"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let banca = 1500.00;
+        let dia = 1;
+
+        async function simularOperacao() {
+            if (dia > 15) {
+                document.getElementById('status').innerText = "🏁 Simulação concluída!";
+                return;
+            }
+
+            // Simula variação de lucro ou perda
+            let variacao = (Math.random() * 0.04) - 0.01; 
+            let lucroSessao = banca * variacao;
+            banca += lucroSessao;
+
+            try {
+                // Salva no banco de dados para você ver no celular
+                await db.collection("testes").doc("simulacao_atual").set({
+                    valor_banca: banca.toFixed(2),
+                    dia_atual: dia,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                document.getElementById('banca').innerText = `R$ ${banca.toFixed(2)}`;
+                document.getElementById('dia').innerText = dia;
+                document.getElementById('status').innerText = lucroSessao >= 0 ? "🎯 Lucro registrado!" : "📉 Correção de mercado.";
+                document.getElementById('status').style.color = lucroSessao >= 0 ? "#00ff88" : "#ff4444";
+                
+                dia++;
+            } catch (e) {
+                console.error("Erro:", e);
+                document.getElementById('status').innerText = "⚠️ Erro ao conectar banco.";
+            }
+        }
+
+        // Simula uma operação a cada 30 segundos
+        simularOperacao();
+        setInterval(simularOperacao, 30000);
+    </script>
+</body>
+</html>
