@@ -1,577 +1,153 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EtherSniper Neural System</title>
-    
-    <!-- Design System -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Chart.js para visualização de dados -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+// Motor de backtesting para testar estratégias em dados históricos
 
-    <style>
-        :root {
-            --bg-deep: #030405;
-            --glass: rgba(20, 20, 25, 0.7);
-            --neon-blue: #3b82f6;
-            --neon-gold: #fbbf24;
-            --grid-color: rgba(255, 255, 255, 0.03);
-        }
-
-        body {
-            background-color: var(--bg-deep);
-            color: #e2e8f0;
-            font-family: 'Space Grotesk', sans-serif;
-            overflow: hidden; /* App feel */
-            background-image: 
-                linear-gradient(var(--grid-color) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 30px 30px;
-        }
-
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
-
-        /* Animação de Login */
-        .login-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.8s ease-in-out;
-        }
-
-        .hidden-fade {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        /* Scan Line Effect */
-        .scan-line {
-            width: 100%;
-            height: 2px;
-            background: rgba(59, 130, 246, 0.5);
-            position: absolute;
-            z-index: 10;
-            animation: scan 3s linear infinite;
-            pointer-events: none;
-        }
-        @keyframes scan { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-
-        /* Custom Scroll */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--neon-blue); }
-    </style>
-</head>
-<body class="h-screen flex flex-col">
-
-    <!-- 1. TELA DE LOGIN (REAL FIREBASE) -->
-    <div id="login-screen" class="login-overlay">
-        <div class="glass-panel p-8 rounded-2xl w-full max-w-md relative overflow-hidden border-t-4 border-blue-600">
-            <div class="absolute top-0 left-0 w-full h-full bg-blue-500/5 z-0"></div>
+const BacktestEngine = {
+    strategies: {
+        // Estratégia 1: RSI + MACD Confluence
+        rsi_macd: (data, index, indicators) => {
+            const { rsi, macd } = indicators;
+            if (index < 26) return null; // mínimo de dados
             
-            <div class="relative z-10 text-center">
-                <div class="flex justify-center mb-6">
-                    <div class="w-16 h-16 bg-blue-900/30 rounded-full flex items-center justify-center border border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.5)]">
-                        <i data-lucide="lock" class="w-8 h-8 text-blue-400"></i>
-                    </div>
-                </div>
-                
-                <h1 class="text-2xl font-bold tracking-tight mb-1">EtherSniper Neural</h1>
-                <p class="text-xs text-gray-500 uppercase tracking-widest mb-8">Autenticação Segura Firebase</p>
-
-                <div class="space-y-4 text-left">
-                    <div>
-                        <label class="text-xs text-blue-400 font-bold ml-1">E-MAIL</label>
-                        <input type="email" id="email-input" placeholder="seu-email@exemplo.com" 
-                            class="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono transition-all mb-2">
-                    </div>
-
-                    <div>
-                        <label class="text-xs text-blue-400 font-bold ml-1">SENHA</label>
-                        <input type="password" id="password-input" placeholder="••••••••" 
-                            class="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono transition-all">
-                    </div>
-                    
-                    <div class="flex gap-2">
-                        <button id="btn-login" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg transition-all shadow-lg shadow-blue-900/40 flex justify-center items-center gap-2 group">
-                            <span id="btn-text" class="group-hover:tracking-wider transition-all">ENTRAR</span>
-                            <div id="btn-loader" class="hidden animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        </button>
-                        
-                        <button id="btn-register" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition-all shadow-lg flex justify-center items-center gap-2">
-                            <span>CRIAR CONTA</span>
-                        </button>
-                    </div>
-                    
-                    <p id="login-error" class="text-red-400 text-xs text-center min-h-[1rem] mt-2 font-bold bg-red-900/20 p-2 rounded hidden"></p>
-                </div>
-            </div>
+            const currentRSI = rsi[index]?.value;
+            const currentMACD = macd.macdLine[index]?.value;
+            const currentSignal = macd.signalLine[index]?.value;
+            const prevMACD = macd.macdLine[index-1]?.value;
+            const prevSignal = macd.signalLine[index-1]?.value;
             
-            <div class="mt-8 pt-4 border-t border-gray-800 flex justify-between text-[10px] text-gray-500">
-                <span>PROJECT: ETHERSNIPER</span>
-                <span id="connection-status" class="text-gray-500">⚫ Inicializando...</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. DASHBOARD PRINCIPAL (Só aparece após login autenticado) -->
-    <div id="main-dashboard" class="flex-1 flex flex-col opacity-0 transition-opacity duration-1000 hidden">
+            if (!currentRSI || !currentMACD || !currentSignal) return null;
+            
+            // Sinal de compra: RSI < 40 e MACD cruza acima do sinal
+            const macdCrossUp = prevMACD <= prevSignal && currentMACD > currentSignal;
+            if (currentRSI < 40 && macdCrossUp) return 'BUY';
+            
+            // Sinal de venda: RSI > 60 e MACD cruza abaixo do sinal
+            const macdCrossDown = prevMACD >= prevSignal && currentMACD < currentSignal;
+            if (currentRSI > 60 && macdCrossDown) return 'SELL';
+            
+            return null;
+        },
         
-        <!-- Navbar -->
-        <nav class="h-16 border-b border-gray-800 bg-black/40 flex items-center justify-between px-6 backdrop-blur-md sticky top-0 z-40">
-            <div class="flex items-center gap-3">
-                <i data-lucide="brain-circuit" class="text-blue-500 w-6 h-6 animate-pulse"></i>
-                <span class="font-bold text-lg tracking-tight">EtherSniper <span class="text-blue-500 font-mono text-sm">NEURAL</span></span>
-            </div>
-            <div class="flex items-center gap-4">
-                <div class="hidden md:flex items-center gap-2 text-xs bg-gray-900/80 px-3 py-1.5 rounded-full border border-gray-700">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
-                    <span class="text-gray-300">User: <span id="user-display" class="text-blue-400 font-mono">...</span></span>
-                </div>
-                <button id="btn-logout" class="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-xs uppercase font-bold">
-                    SAIR <i data-lucide="log-out" class="w-4 h-4"></i>
-                </button>
-            </div>
-        </nav>
-
-        <div class="flex-1 overflow-hidden flex flex-col lg:flex-row">
+        // Estratégia 2: Bollinger Breakout
+        bollinger_breakout: (data, index, indicators) => {
+            const { bollinger } = indicators;
+            if (index < 20) return null;
             
-            <!-- Sidebar: Neural Terminal & Logs -->
-            <aside class="w-full lg:w-80 border-r border-gray-800 bg-black/20 flex flex-col">
-                <div class="p-4 border-b border-gray-800">
-                    <h3 class="text-xs font-bold text-gray-400 uppercase flex items-center gap-2">
-                        <i data-lucide="terminal" class="w-3 h-3"></i> Neural Logs
-                    </h3>
-                </div>
-                <div id="terminal-logs" class="flex-1 overflow-y-auto p-4 font-mono text-[10px] space-y-2 scroll-smooth">
-                    <div class="text-gray-500">> System initialized...</div>
-                    <div class="text-blue-500">> Authenticated via Firebase Secure Channel.</div>
-                </div>
-                <!-- Status da IA -->
-                <div class="p-4 bg-gray-900/50 border-t border-gray-800">
-                    <div class="flex justify-between text-xs mb-2">
-                        <span class="text-gray-400">Precisão do Modelo</span>
-                        <span id="model-accuracy" class="text-blue-400 font-bold">Iniciando...</span>
-                    </div>
-                    <div class="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                        <div id="accuracy-bar" class="bg-blue-600 h-full w-0 transition-all duration-1000"></div>
-                    </div>
-                </div>
-            </aside>
+            const currentPrice = data[index].close;
+            const upper = bollinger.upper[index]?.value;
+            const lower = bollinger.lower[index]?.value;
+            const middle = bollinger.middle[index]?.value;
+            
+            if (!upper || !lower) return null;
+            
+            // Compra: toca banda inferior e reverte
+            if (currentPrice <= lower * 1.01) return 'BUY';
+            
+            // Venda: toca banda superior
+            if (currentPrice >= upper * 0.99) return 'SELL';
+            
+            return null;
+        },
+        
+        // Estratégia 3: Golden Cross
+        golden_cross: (data, index, indicators) => {
+            const { sma20, sma50 } = indicators;
+            if (index < 50) return null;
+            
+            const currentSMA20 = sma20[index]?.value;
+            const currentSMA50 = sma50[index]?.value;
+            const prevSMA20 = sma20[index-1]?.value;
+            const prevSMA50 = sma50[index-1]?.value;
+            
+            if (!currentSMA20 || !currentSMA50) return null;
+            
+            // Cruzamento de alta: SMA20 cruza acima da SMA50
+            if (prevSMA20 <= prevSMA50 && currentSMA20 > currentSMA50) return 'BUY';
+            
+            // Cruzamento de baixa
+            if (prevSMA20 >= prevSMA50 && currentSMA20 < currentSMA50) return 'SELL';
+            
+            return null;
+        }
+    },
 
-            <!-- Main Content: Scanner & Chart -->
-            <main class="flex-1 flex flex-col relative overflow-hidden">
-                <div class="scan-line"></div>
-                
-                <!-- KPI Header -->
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
-                    <div class="glass-panel p-4 rounded-xl">
-                        <div class="text-gray-500 text-xs uppercase">Scan Cycle</div>
-                        <div class="text-xl font-mono text-white mt-1" id="scan-countdown">60s</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl border-l-2 border-green-500">
-                        <div class="text-gray-500 text-xs uppercase">Bullish Signals</div>
-                        <div class="text-xl font-mono text-green-400 mt-1" id="bull-count">0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl border-l-2 border-red-500">
-                        <div class="text-gray-500 text-xs uppercase">Bearish Signals</div>
-                        <div class="text-xl font-mono text-red-400 mt-1" id="bear-count">0</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl relative overflow-hidden">
-                        <div class="absolute right-0 top-0 p-2 opacity-20"><i data-lucide="cpu" class="w-8 h-8"></i></div>
-                        <div class="text-gray-500 text-xs uppercase">AI Confidence</div>
-                        <div class="text-xl font-mono text-blue-400 mt-1" id="ai-confidence">--%</div>
-                    </div>
-                </div>
-
-                <!-- Tabela Dinâmica -->
-                <div class="flex-1 overflow-y-auto px-6 pb-6">
-                    <div class="glass-panel rounded-xl overflow-hidden min-h-[400px]">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-white/5 text-xs text-gray-400 uppercase font-medium sticky top-0 backdrop-blur-md">
-                                <tr>
-                                    <th class="p-4">Ativo</th>
-                                    <th class="p-4 text-right">Preço</th>
-                                    <th class="p-4 text-right">24h %</th>
-                                    <th class="p-4 text-right">Volatilidade</th>
-                                    <th class="p-4 text-center">Predição IA</th>
-                                    <th class="p-4 text-right">Confiança</th>
-                                </tr>
-                            </thead>
-                            <tbody id="market-table" class="text-sm divide-y divide-gray-800">
-                                <tr>
-                                    <td colspan="6" class="p-10 text-center text-gray-500">
-                                        <div class="flex flex-col items-center gap-3">
-                                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                                            <span class="text-xs font-mono animate-pulse">AGUARDANDO AUTENTICAÇÃO...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Aviso Legal -->
-                <div class="px-6 py-2 text-[10px] text-gray-600 text-center bg-black/80">
-                    O EtherSniper Neural é uma ferramenta de análise estatística. O desempenho passado não garante resultados futuros.
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <!-- FIREBASE & LÓGICA DO APP -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-
-        // CONFIGURAÇÃO MANUAL (FORÇANDO AS SUAS CHAVES REAIS)
-        const manualConfig = {
-            apiKey: "AIzaSyAx9DPXLOCvJmgRRKlladRC-NRbxJmj0SE",
-            authDomain: "ethersniper.firebaseapp.com",
-            projectId: "ethersniper",
-            storageBucket: "ethersniper.firebasestorage.app",
-            messagingSenderId: "68071456710",
-            appId: "1:68071456710:web:053ce6921ea0de77c57cc7",
-            measurementId: "G-19282VJVDM"
+    run(data, strategyName, config) {
+        const results = {
+            trades: [],
+            equity: [config.initialCapital],
+            totalReturn: 0,
+            winRate: 0,
+            maxDrawdown: 0
         };
-
-        // Força o uso da configuração manual para garantir que é a correta
-        const firebaseConfig = manualConfig; 
-
-        let app, auth, db;
         
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            
-            // Diagnóstico de Conexão
-            const statusEl = document.getElementById('connection-status');
-            statusEl.innerHTML = "🟢 API Pronta: " + firebaseConfig.projectId;
-            statusEl.className = "text-green-500";
-            console.log("Firebase Init OK:", firebaseConfig.projectId);
-            
-        } catch (error) {
-            console.error("Erro Firebase:", error);
-            document.getElementById('connection-status').innerHTML = "🔴 Erro de Configuração";
-        }
-
-        // ==========================================
-        // LÓGICA DE LOGIN BLINDADA
-        // ==========================================
-
-        const btnLogin = document.getElementById('btn-login');
-        const btnRegister = document.getElementById('btn-register');
-        const btnLogout = document.getElementById('btn-logout');
-        const emailInput = document.getElementById('email-input');
-        const passInput = document.getElementById('password-input');
-        const errorMsg = document.getElementById('login-error');
-
-        window.attemptLogin = async () => {
-            const email = emailInput.value.trim();
-            const password = passInput.value;
-            
-            if(!email || !password) {
-                showError("Preencha e-mail e senha.");
-                return;
-            }
-
-            showError("");
-            setLoading(true);
-
-            try {
-                // Tenta Logar
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                console.log("Login SUCESSO:", userCredential.user.uid);
-            } catch (error) {
-                console.error("Login Falhou:", error.code);
-                setLoading(false);
-                handleAuthError(error, "login");
-            }
+        let capital = config.initialCapital;
+        let position = null; // { type: 'LONG'|'SHORT', entry: price, size: amount }
+        let peak = capital;
+        
+        // Calcular indicadores uma vez
+        const indicators = {
+            rsi: TechnicalAnalysis.calculateRSI(data),
+            macd: TechnicalAnalysis.calculateMACD(data),
+            bollinger: TechnicalAnalysis.calculateBollinger(data),
+            sma20: TechnicalAnalysis.calculateSMA(data, 20),
+            sma50: TechnicalAnalysis.calculateSMA(data, 50),
+            atr: TechnicalAnalysis.calculateATR(data)
         };
-
-        window.attemptRegister = async () => {
-            const email = emailInput.value.trim();
-            const password = passInput.value;
-
-            if(!email || !password) {
-                showError("Preencha e-mail e senha.");
-                return;
-            }
-            if(password.length < 6) {
-                showError("Senha muito curta (mínimo 6 dígitos).");
-                return;
-            }
-
-            showError("");
-            setLoading(true);
-
-            try {
-                // Tenta Criar Conta
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                console.log("Conta Criada:", userCredential.user.uid);
-            } catch (error) {
-                console.error("Registro Falhou:", error.code);
-                setLoading(false);
-                handleAuthError(error, "register");
-            }
-        }
-
-        function handleAuthError(error, type) {
-            let msg = "Erro desconhecido: " + error.code;
-
-            if (error.code === 'auth/wrong-password') msg = "Senha incorreta.";
-            else if (error.code === 'auth/user-not-found') msg = "Usuário não encontrado. Clique no botão CRIAR CONTA.";
-            else if (error.code === 'auth/invalid-email') msg = "E-mail inválido.";
-            else if (error.code === 'auth/email-already-in-use') msg = "Este e-mail já existe. Clique em ENTRAR.";
-            else if (error.code === 'auth/weak-password') msg = "Senha fraca (use 6+ caracteres).";
-            else if (error.code === 'auth/operation-not-allowed') {
-                 // Diagnóstico Avançado para este erro específico
-                 msg = "ERRO DE CONFIGURAÇÃO: Vá no Firebase > Authentication > Sign-in method. Clique no Lápis em 'Email/Senha' e ative a PRIMEIRA opção (não apenas o link de email).";
-            }
-            else if (error.code === 'auth/network-request-failed') msg = "Erro de conexão. Verifique sua internet.";
-            
-            showError(msg);
-        }
-
-        function showError(msg) {
-            errorMsg.innerText = msg || "";
-            if(msg) errorMsg.classList.remove('hidden');
-            else errorMsg.classList.add('hidden');
-        }
-
-        btnLogout.addEventListener('click', () => {
-            signOut(auth).then(() => window.location.reload());
-        });
-
-        // Estado do Usuário
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('login-screen').classList.add('hidden-fade');
-                setTimeout(() => document.getElementById('login-screen').style.display = 'none', 800);
-                
-                const dashboard = document.getElementById('main-dashboard');
-                dashboard.classList.remove('hidden');
-                setTimeout(() => dashboard.classList.remove('opacity-0'), 100);
-
-                document.getElementById('user-display').innerText = user.email;
-                initNeuralSystem(); // Inicia a IA
-            }
-        });
-
-        function setLoading(isLoading) {
-            const btnText = document.getElementById('btn-text');
-            const btnLoader = document.getElementById('btn-loader');
-            
-            if (isLoading) {
-                btnText.classList.add('hidden');
-                btnLoader.classList.remove('hidden');
-                btnLogin.disabled = true;
-                btnRegister.disabled = true;
-                btnLogin.classList.add('opacity-70');
-            } else {
-                btnText.classList.remove('hidden');
-                btnLoader.classList.add('hidden');
-                btnLogin.disabled = false;
-                btnRegister.disabled = false;
-                btnLogin.classList.remove('opacity-70');
-            }
-        }
-
-        btnLogin.addEventListener('click', window.attemptLogin);
-        btnRegister.addEventListener('click', window.attemptRegister);
-        passInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') window.attemptLogin() });
-
-
-        // ==========================================
-        // NEURAL ENGINE (IA de Trading)
-        // ==========================================
         
-        lucide.createIcons();
-
-        class NeuroNet {
-            constructor() {
-                this.weights = { rsi: 0.3, trend: 0.4, volume: 0.3 };
-                this.accuracy = 50; 
-                this.learningRate = 0.05;
-            }
-
-            learn(prediction, outcome) {
-                if (prediction === outcome) {
-                    this.accuracy = Math.min(99, this.accuracy + 2);
-                    logToTerminal(`Prediction validated. Strengthening weights...`, 'success');
-                } else {
-                    this.accuracy = Math.max(10, this.accuracy - 2);
-                    this.weights.rsi += (Math.random() - 0.5) * this.learningRate;
-                    logToTerminal(`Market anomaly detected. Recalibrating...`, 'warning');
+        const strategy = this.strategies[strategyName];
+        
+        for (let i = 50; i < data.length; i++) {
+            const candle = data[i];
+            const signal = strategy(data, i, indicators);
+            
+            // Gerenciamento de posição aberta
+            if (position) {
+                const pnlPercent = position.type === 'LONG' 
+                    ? ((candle.close - position.entry) / position.entry) * 100
+                    : ((position.entry - candle.close) / position.entry) * 100;
+                
+                // Checar Stop Loss ou Take Profit
+                const hitStop = pnlPercent <= -config.stopLoss;
+                const hitTarget = pnlPercent >= config.takeProfit;
+                
+                if (hitStop || hitTarget || signal === 'SELL') {
+                    // Fechar posição
+                    const pnl = (capital * (pnlPercent / 100)) * (config.leverage || 1);
+                    capital += pnl;
+                    
+                    results.trades.push({
+                        type: position.type,
+                        entry: position.entry,
+                        exit: candle.close,
+                        pnl: pnl,
+                        pnlPercent: pnlPercent,
+                        result: pnl > 0 ? 'WIN' : 'LOSS',
+                        exitReason: hitStop ? 'STOP' : hitTarget ? 'TARGET' : 'SIGNAL'
+                    });
+                    
+                    position = null;
+                    results.equity.push(capital);
+                    
+                    if (capital > peak) peak = capital;
+                    const drawdown = ((peak - capital) / peak) * 100;
+                    if (drawdown > results.maxDrawdown) results.maxDrawdown = drawdown;
                 }
-                updateAccuracyUI(this.accuracy);
             }
-
-            analyze(coin) {
-                const change = parseFloat(coin.priceChangePercent);
-                const price = parseFloat(coin.lastPrice);
-                const high = parseFloat(coin.highPrice);
-                const low = parseFloat(coin.lowPrice);
-
-                let rsiSignal = 0;
-                let trendSignal = 0;
-
-                if (change < -5) rsiSignal = 0.8; 
-                else if (change < -2) rsiSignal = 0.4;
-                else if (change > 5) rsiSignal = -0.8; 
-                else if (change > 2) rsiSignal = -0.4;
-
-                const positionInRange = (price - low) / (high - low);
-                if (positionInRange < 0.2) trendSignal = 0.7; 
-                if (positionInRange > 0.8) trendSignal = -0.7; 
-
-                const finalScore = (rsiSignal * this.weights.rsi) + (trendSignal * this.weights.trend);
-                const confidence = Math.min(Math.abs(finalScore) * 100 + 40, 99).toFixed(1);
-
-                let prediction = 'NEUTRO';
-                if (finalScore > 0.2) prediction = 'COMPRA';
-                if (finalScore > 0.5) prediction = 'COMPRA FORTE';
-                if (finalScore < -0.2) prediction = 'VENDA';
-                if (finalScore < -0.5) prediction = 'VENDA FORTE';
-
-                return { prediction, confidence };
-            }
-        }
-
-        const brain = new NeuroNet();
-        const terminal = document.getElementById('terminal-logs');
-        let countdown = 60;
-
-        function logToTerminal(msg, type = 'info') {
-            const div = document.createElement('div');
-            const time = new Date().toLocaleTimeString();
-            let color = 'text-gray-500';
-            if (type === 'success') color = 'text-green-400';
-            if (type === 'warning') color = 'text-orange-400';
-            if (type === 'alert') color = 'text-red-500 font-bold';
             
-            div.className = `${color}`;
-            div.innerText = `[${time}] ${msg}`;
-            terminal.appendChild(div);
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
-        function updateAccuracyUI(acc) {
-            const el = document.getElementById('model-accuracy');
-            if(el) el.innerText = acc.toFixed(1) + '%';
-            const bar = document.getElementById('accuracy-bar');
-            if(bar) {
-                bar.style.width = acc + '%';
-                if (acc > 70) bar.className = "h-full transition-all duration-1000 bg-green-500";
-                else if (acc < 40) bar.className = "h-full transition-all duration-1000 bg-red-500";
-                else bar.className = "h-full transition-all duration-1000 bg-blue-500";
+            // Abrir nova posição
+            if (!position && signal === 'BUY') {
+                position = {
+                    type: 'LONG',
+                    entry: candle.close,
+                    size: capital * 0.95 // 95% do capital (reserva para fees)
+                };
             }
         }
-
-        async function initNeuralSystem() {
-            logToTerminal("Neural core online...", "info");
-            fetchMarketData();
-            
-            setInterval(() => {
-                countdown--;
-                const timer = document.getElementById('scan-countdown');
-                if(timer) timer.innerText = countdown + 's';
-                if (countdown <= 0) {
-                    fetchMarketData();
-                    countdown = 60;
-                }
-            }, 1000);
-        }
-
-        async function fetchMarketData() {
-            logToTerminal("Scanning Binance liquidity pools...", "info");
-            try {
-                const res = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-                const data = await res.json();
-                
-                const cleanData = data.filter(d => d.symbol.endsWith('USDT') && parseFloat(d.quoteVolume) > 10000000);
-                const top20 = cleanData.sort((a,b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume)).slice(0, 20);
-
-                renderMarketTable(top20);
-                
-                if (Math.random() > 0.7) brain.learn('COMPRA', 'COMPRA'); 
-
-            } catch (e) {
-                logToTerminal("API Error: " + e.message, "alert");
-            }
-        }
-
-        function renderMarketTable(coins) {
-            const tbody = document.getElementById('market-table');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            
-            let bulls = 0;
-            let bears = 0;
-            let totalConfidence = 0;
-
-            coins.forEach(coin => {
-                const analysis = brain.analyze(coin);
-                if (analysis.prediction.includes('COMPRA')) bulls++;
-                if (analysis.prediction.includes('VENDA')) bears++;
-                totalConfidence += parseFloat(analysis.confidence);
-
-                const price = parseFloat(coin.lastPrice).toFixed(2);
-                const change = parseFloat(coin.priceChangePercent).toFixed(2);
-                
-                let badgeClass = 'bg-gray-800 text-gray-400';
-                if (analysis.prediction.includes('COMPRA')) badgeClass = 'bg-green-900/30 text-green-400 border border-green-500/20';
-                if (analysis.prediction.includes('VENDA')) badgeClass = 'bg-red-900/30 text-red-400 border border-red-500/20';
-
-                const row = `
-                    <tr class="hover:bg-white/5 transition-colors border-b border-gray-800/50">
-                        <td class="p-4 font-bold text-white flex flex-col">
-                            <span>${coin.symbol.replace('USDT','')}</span>
-                            <span class="text-[10px] text-gray-500">USDT</span>
-                        </td>
-                        <td class="p-4 text-right font-mono text-gray-300">$${price}</td>
-                        <td class="p-4 text-right font-mono ${change >= 0 ? 'text-green-400' : 'text-red-400'}">
-                            ${change}%
-                        </td>
-                        <td class="p-4 text-right text-gray-500 text-xs">
-                            ${(parseFloat(coin.highPrice) - parseFloat(coin.lowPrice)).toFixed(2)}
-                        </td>
-                        <td class="p-4 text-center">
-                            <span class="px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${badgeClass}">
-                                ${analysis.prediction}
-                            </span>
-                        </td>
-                        <td class="p-4 text-right font-mono text-blue-400 text-xs">
-                            ${analysis.confidence}%
-                        </td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
-
-            document.getElementById('bull-count').innerText = bulls;
-            document.getElementById('bear-count').innerText = bears;
-            document.getElementById('ai-confidence').innerText = (totalConfidence / coins.length).toFixed(1) + '%';
-        }
-    </script>
-</body>
-</html>
+        
+        // Calcular métricas finais
+        results.totalReturn = ((capital - config.initialCapital) / config.initialCapital) * 100;
+        const wins = results.trades.filter(t => t.result === 'WIN').length;
+        results.winRate = results.trades.length > 0 ? (wins / results.trades.length) * 100 : 0;
+        results.finalCapital = capital;
+        
+        return results;
+    }
+};
